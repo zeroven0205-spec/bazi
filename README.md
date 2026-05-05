@@ -1,21 +1,19 @@
 # 简介
 
-- bazi.py 八字排盘，能比常用的排盘更清晰地显示冲、合、刑等关系，计算五行分数，附加《三命通会》等命理评判
+- cli.py 八字排盘，能比常用的排盘更清晰地显示冲、合、刑等关系，计算五行分数，附加《三命通会》等命理评判
 - luohou.py 计算罗喉日时,用于提示风水师何时慎用罗盘。
 - shengxiao.py 用户生肖合婚等。
 
 
-赞赏
-![ba61a2037fb19ed1d0c66977d2080fbb](https://img2024.cnblogs.com/blog/3174021/202602/3174021-20260203224412386-639384863.jpg)
-
-
-交流钉钉群21734177
+<!-- 交流钉钉群21734177
 ![](https://img2024.cnblogs.com/blog/3174021/202602/3174021-20260203223911527-916040523.png)
 
 
 软件咨询、学八字批八字500元/小时：微信或钉钉pythontesting 因时间有限，不再提供软件定制。
 
-风水远程查看收费888起，实地1888(仅限湖南邵阳、珠三角等，其他地方需要加差旅费用）起。
+风水远程查看收费888起，实地1888(仅限湖南邵阳、珠三角等，其他地方需要加差旅费用）起。 -->
+
+
 
 # 命理书籍(访问密码: 2274) 点击“普通下载”下面的“立即下载”可浏览器下载
 
@@ -50,10 +48,10 @@
 不建议选择大陆解放后的书籍精读，贫道有精选纸质和电子书，辅以阅读辅导，随缘会友。
 
 # 安装
-- 安裝依赖库
+- 安装依赖库
 
-```python
-pip install bidict lunar_python colorama
+```bash
+pip3 install bidict lunar_python colorama sxtwl
 ```
 
 - linux打开终端或windows打开cmd或git的bash或powercmd等工具
@@ -61,12 +59,44 @@ pip install bidict lunar_python colorama
 进入到代码所在目录。
 
 
-# 使用
+# 统一 CLI（推荐）
+
+项目提供统一的命令行入口 `python3 cli.py`，支持所有子命令：
+
+```bash
+# 八字排盘（女命）
+python3 cli.py bazi 1990 3 15 19 -n
+
+# 罗喉日时
+python3 cli.py luohou -d "2024 1 1"
+
+# 生肖合婚
+python3 cli.py shengxiao 虎
+
+# 命例检索
+python3 cli.py search --wuhang 木 --tags 贵格 --limit 5
+
+# 查看缓存状态
+python3 cli.py cache-info
+
+# 清空缓存
+python3 cli.py cache-clear
+
+# 查看帮助
+python3 cli.py --help
+python3 cli.py bazi --help
+python3 cli.py search --help
+```
+
+> **注意**：使用统一 CLI 前需先安装依赖库，见上方安装说明。
+
+
+# 各模块独立使用
 
 - 生肖合婚
 
-```python
-$ python shengxiao.py 虎
+```bash
+python3 shengxiao.py 虎
 你的生肖是： 虎
 你的年支是： 寅
 ================================================================================
@@ -96,8 +126,8 @@ $ python shengxiao.py 虎
 
 - 计算罗喉日时
 
-```python
-$ python luohou.py 
+```bash
+python3 luohou.py 
 公历:2021年3月23日	农历:2021年二月十一日   	辛丑-辛卯-庚午	杀师时:卯5-7申15-17
 公历:2021年3月24日	农历:2021年二月十二日   	辛丑-辛卯-辛未	杀师时:午11-13辰7-9
 公历:2021年3月25日	农历:2021年二月十三日   	辛丑-辛卯-壬申	杀师时:戌19-21丑1-3
@@ -111,8 +141,8 @@ $ python luohou.py
 
 ```python
 
-$ python bazi.py -h
-usage: bazi.py [-h] [-b] [-g] [-r] [-n] [--version] year month day time
+$ python3 cli.py -h
+usage: cli.py [-h] [-b] [-g] [-r] [-n] [--version] year month day time
 
 positional arguments:
   year        year
@@ -131,7 +161,7 @@ optional arguments:
 
 # 八字示例
 
-> python .\bazi.py 1977 8 11 19 -n
+python3 cli.py bazi 1977 8 11 19 -n
 
 女命
 ======================================
