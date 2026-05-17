@@ -300,11 +300,227 @@ class TestDataModule(unittest.TestCase):
         self.assertIsInstance(result, list)
 
 
+class TestBaziCalcModule(unittest.TestCase):
+    """测试 bazi_calc 模块化包"""
+    
+    def setUp(self):
+        from bazi_calc import BaziCalculator
+        self.calc = BaziCalculator()
+    
+    def test_basic_calculation(self):
+        """测试基本八字计算"""
+        result = self.calc.calculate(1990, 3, 15, 19)
+        self.assertEqual(result.gans[2], '己')  # 日干
+        self.assertEqual(result.zhis[0], '午')   # 年支
+        self.assertIsNotNone(result.me)
+        self.assertIsInstance(result.scores, dict)
+    
+    def test_lunar_input(self):
+        """测试农历输入"""
+        result = self.calc.calculate(1990, 3, 15, 19, lunar=True)
+        self.assertIn('1990', result.solar)
+    
+    def test_solar_input(self):
+        """测试公历输入"""
+        result = self.calc.calculate(1990, 3, 15, 19, lunar=False)
+        self.assertIn('1990', result.solar)
+    
+    def test_female_flag(self):
+        """测试女命标志"""
+        result = self.calc.calculate(1990, 3, 15, 19, female=True)
+        self.assertEqual(result.sex, '女')
+    
+    def test_direct_input_bazi(self):
+        """测试直接输入八字模式"""
+        result = self.calc.calculate(
+            year='庚午', month='己卯', day='己卯', time='甲戌',
+            female=False, direct_input=True, start_year=1990, end_year=2000
+        )
+        self.assertEqual(result.gans[0], '庚')
+        self.assertEqual(result.zhis[0], '午')
+    
+    def test_dayun_details(self):
+        """测试大运详细信息"""
+        result = self.calc.calculate(1990, 3, 15, 19)
+        self.assertTrue(len(result.dayuns) > 0)
+        dayun = result.dayuns[0]
+        self.assertIsNotNone(dayun.ganzhi)
+        self.assertIsNotNone(dayun.gan_shens)
+        self.assertIn('start_year', dir(dayun))
+    
+    def test_wuxing_scores(self):
+        """测试五行分数"""
+        result = self.calc.calculate(1990, 3, 15, 19)
+        for wx in ('金', '木', '水', '火', '土'):
+            self.assertIn(wx, result.scores)
+            self.assertIsInstance(result.scores[wx], int)
+    
+    def test_shens(self):
+        """测试神煞"""
+        result = self.calc.calculate(1990, 3, 15, 19)
+        self.assertIsInstance(result.all_shens, list)
+
+
+class TestBaziFormatter(unittest.TestCase):
+    """测试 bazi_calc 格式化器"""
+    
+    def setUp(self):
+        from bazi_calc import BaziCalculator
+        from bazi_calc.formatter import (
+            TerminalFormatter, JsonFormatter, PlainFormatter, HtmlFormatter
+        )
+        self.calc = BaziCalculator()
+        self.result = self.calc.calculate(1990, 3, 15, 19)
+        self.formatters = {
+            'terminal': TerminalFormatter(),
+            'json': JsonFormatter(),
+            'plain': PlainFormatter(),
+            'html': HtmlFormatter()
+        }
+    
+    def test_terminal_format(self):
+        """测试终端格式输出"""
+        out = self.formatters['terminal'].format(self.result)
+        self.assertIsInstance(out, str)
+        self.assertIn('八字', out)
+    
+    def test_json_format(self):
+        """测试 JSON 格式输出"""
+        out = self.formatters['json'].format(self.result)
+        self.assertIsInstance(out, str)
+        import json
+        data = json.loads(out)
+        self.assertIn('bazi', data)
+    
+    def test_plain_format(self):
+        """测试纯文本格式输出"""
+        out = self.formatters['plain'].format(self.result)
+        self.assertIsInstance(out, str)
+        self.assertNotIn('\033', out)  # 不应有 ANSI 颜色码
+    
+    def test_html_format(self):
+        """测试 HTML 格式输出"""
+        out = self.formatters['html'].format(self.result)
+        self.assertIsInstance(out, str)
+        self.assertIn('<div', out)
+
+
+class TestBaziMingli(unittest.TestCase):
+    """测试命理分析模块"""
+    
+    def setUp(self):
+        from bazi_calc import BaziCalculator
+        from bazi_calc.mingli import MingliAnalyzer
+        self.calc = BaziCalculator()
+        self.result = self.calc.calculate(1990, 3, 15, 19)
+        self.analyzer = MingliAnalyzer(self.result)
+    
+    def test_analyze_returns_list(self):
+        """测试分析返回列表"""
+        lines = self.analyzer.analyze()
+        self.assertIsInstance(lines, list)
+    
+    def test_female_passes_to_analyzer(self):
+        """测试女命分析"""
+        from bazi_calc.mingli import MingliAnalyzer
+        analyzer = MingliAnalyzer(self.result, female=True)
+        lines = analyzer.analyze()
+        self.assertIsInstance(lines, list)
+
+
+class TestBaziLuohou(unittest.TestCase):
+    """测试罗喉派模块"""
+    
+    def test_basic_calculation(self):
+        """测试罗喉派基本计算"""
+        from bazi_calc.luohou import calculate_luohou
+        result = calculate_luohou(2019, 6, 16)
+        self.assertIn('date', result)
+        self.assertIn('lunar', result)
+        self.assertIn('bazi', result)
+        self.assertIn('jiuxing', result)
+    
+    def test_jiuxing_values(self):
+        """测试九星值"""
+        from bazi_calc.luohou import calculate_luohou
+        result = calculate_luohou(2019, 6, 16)
+        # 九星格式可能是 "四绿木" 或包含星宿名
+        self.assertIsNotNone(result['jiuxing'])
+        self.assertIsInstance(result['jiuxing'], str)
+
+
+class TestBaziLiunian(unittest.TestCase):
+    """测试流年模块"""
+    
+    def setUp(self):
+        from bazi_calc import BaziCalculator
+        self.calc = BaziCalculator()
+        self.result = self.calc.calculate(1990, 3, 15, 19)
+    
+    def test_calculate_liunians(self):
+        """测试流年计算"""
+        from bazi_calc.liunian import calculate_liunians
+        liunians = calculate_liunians(self.result, 2020, 2025)
+        self.assertEqual(len(liunians), 6)
+        self.assertEqual(liunians[0].year, 2020)
+        self.assertIsNotNone(liunians[0].ganzhi)
+    
+    def test_predict_liunian(self):
+        """测试流年预测"""
+        from bazi_calc.liunian import predict_liunian
+        pred = predict_liunian(self.result, 2025)
+        self.assertIn('year', pred)
+        self.assertIn('summary', pred)
+        self.assertEqual(pred['year'], 2025)
+    
+    def test_liunian_relations(self):
+        """测试流年关系"""
+        from bazi_calc.liunian import calculate_liunians
+        liunians = calculate_liunians(self.result, 2020, 2022)
+        for ln in liunians:
+            self.assertIsNotNone(ln.gan_shens)
+            self.assertIsNotNone(ln.zhi_shens)
+
+
+class TestBaziPersistence(unittest.TestCase):
+    """测试持久化模块"""
+    
+    def setUp(self):
+        from bazi_calc import BaziCalculator
+        self.calc = BaziCalculator()
+        self.result = self.calc.calculate(1990, 3, 15, 19)
+        self.temp_file = '/tmp/bazi_test_persist.json'
+    
+    def test_export_import_json(self):
+        """测试 JSON 导出导入"""
+        from bazi_calc.persistence import export_json, import_json
+        export_json(self.result, self.temp_file)
+        result2 = import_json(self.temp_file)
+        self.assertEqual(list(self.result.gans), list(result2.gans))
+        self.assertEqual(list(self.result.zhis), list(result2.zhis))
+    
+    def test_to_from_json(self):
+        """测试 JSON 字符串转换"""
+        from bazi_calc.persistence import to_json, from_json
+        json_str = to_json(self.result)
+        self.assertIsInstance(json_str, str)
+        result2 = from_json(json_str)
+        self.assertEqual(self.result.me, result2.me)
+    
+    def test_roundtrip_dayuns(self):
+        """测试大运往返序列化"""
+        from bazi_calc.persistence import export_json, import_json
+        export_json(self.result, self.temp_file)
+        result2 = import_json(self.temp_file)
+        self.assertEqual(len(self.result.dayuns), len(result2.dayuns))
+        self.assertEqual(self.result.dayuns[0].ganzhi, result2.dayuns[0].ganzhi)
+
+
 def run_tests():
     """运行所有测试"""
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
-
+    
     # 添加测试类
     suite.addTests(loader.loadTestsFromTestCase(TestWuxingIndex))
     suite.addTests(loader.loadTestsFromTestCase(TestShenShaIndex))
@@ -312,11 +528,19 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestSiziParser))
     suite.addTests(loader.loadTestsFromTestCase(TestCliSubcommands))
     suite.addTests(loader.loadTestsFromTestCase(TestDataModule))
-
+    
+    # 新增：bazi_calc 模块测试
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziCalcModule))
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziFormatter))
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziMingli))
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziLuohou))
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziLiunian))
+    suite.addTests(loader.loadTestsFromTestCase(TestBaziPersistence))
+    
     # 运行测试
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
-
+    
     return result.wasSuccessful()
 
 
